@@ -17,7 +17,12 @@ public class PaymentOrders {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentOrderId;
 
-    private String payLoad;
+    private Long orderId;
 
+    private String orderName;
+
+    private int quantity;
+
+    private boolean paymentStatus = false;
 
 }
