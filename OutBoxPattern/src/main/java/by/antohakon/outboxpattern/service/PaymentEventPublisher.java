@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,21 +19,30 @@ public class PaymentEventPublisher {
     private final OutboxRepository outboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    @Transactional
     @Scheduled(fixedRate = 5000)
-    public void publishEvents(){
+    public void publishEvents() {
 
         List<OutBox> outboxList = outboxRepository.findAll();
 
-        for(OutBox outbox : outboxList){
-            System.out.println(outbox);
+        try {
+            for (OutBox outbox : outboxList) {
+                log.info("до отправки взли из БД - " + outbox);
 
-            try {
-                kafkaTemplate.send("payment-topic", outbox.getPayload());
+                kafkaTemplate.send("payment-topic", outbox.getPayload())
+                        .whenComplete((result, ex) -> {
+                            if (ex == null) {
+                                log.info("сообщение отпарвлено в кафку - " + outbox);
+                                outboxRepository.delete(outbox);
+                            } else {
+                                log.error("не удалось отпарвить сообщение в кафку - " + ex.getMessage());
+                            }
+                        });
 
-                outboxRepository.delete(outbox);
-            } catch (Exception e) {
-                log.error("ОШИБКАААААА " + e.getMessage());
+
             }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
     }
