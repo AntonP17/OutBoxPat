@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @AllArgsConstructor
@@ -25,6 +26,7 @@ public class PaymentConsumer {
             topics = "${kafka.topic.three}",
             groupId = "${spring.kafka.consumer.group-id}"
     )
+    @Transactional
     public void listenOrder(String order) {
 
         System.out.println(order);
